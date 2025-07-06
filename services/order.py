@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
@@ -24,21 +25,24 @@ def create_order(tickets, username, date=None):
     order = Order.objects.create(**order_kwargs)
 
     for ticket_data in tickets:
-        movie_session_id = ticket_data["movie_session"]
         try:
-            movie_session = MovieSession.objects.get(id=movie_session_id)
+            movie_session = MovieSession.objects.get(id=ticket_data["movie_session"])
         except MovieSession.DoesNotExist:
-            raise ValueError(f"Movie session {movie_session_id} does not exist")
+            raise ValueError(f"Movie session {ticket_data['movie_session']} does not exist")
 
-        Ticket.objects.create(
+        ticket = Ticket(
             order=order,
             movie_session=movie_session,
             row=ticket_data["row"],
             seat=ticket_data["seat"]
         )
+        try:
+            ticket.full_clean()
+            ticket.save()
+        except ValidationError as e:
+            raise ValueError(f"Invalid ticket: {e.message_dict}")
 
     return order
-
 
 
 def get_orders(username=None):

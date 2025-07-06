@@ -97,7 +97,7 @@ class Ticket(models.Model):
                 movie_session=self.movie_session, row=self.row, seat=self.seat
         ).exclude(pk=self.pk).exists():
             raise ValidationError({
-                'seat': [f'seat number must be in available range: (1, seats_in_row): (1, {hall.seats_in_row})']
+                'seat': ['This seat is already taken for the selected session.']
             })
 
     def save(self, *args, **kwargs):
